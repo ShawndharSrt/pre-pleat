@@ -1,0 +1,7 @@
+node_modules/
+
+# Tailwind build output (Netlify generates this automatically)
+public/css/output.css
+
+# AI Agent guide files
+public/.agentGuide/
