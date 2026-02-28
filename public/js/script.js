@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize pill position
     const initPill = () => {
-        const activeBtn = document.querySelector('.filter-btn[data-filter="all"]');
+        const activeBtn = document.querySelector('.filter-btn.text-white');
         if (activeBtn && filterPill) {
             filterPill.style.width = `${activeBtn.offsetWidth}px`;
             // Calculate left position relative to parent
@@ -55,6 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Call on load and resize
     initPill();
+
+    // Initial filter execution to hide non-active items
+    const defaultBtn = document.querySelector('.filter-btn.text-white');
+    if (defaultBtn) {
+        const filterValue = defaultBtn.getAttribute('data-filter');
+        portfolioItems.forEach(item => {
+            if (filterValue === 'all' || item.getAttribute('data-category') === filterValue) {
+                item.style.display = 'block';
+                item.style.opacity = '1';
+                item.style.transform = 'scale(1) translateY(0)';
+            } else {
+                item.style.display = 'none';
+                item.style.opacity = '0';
+                item.style.transform = 'scale(0.95) translateY(20px)';
+            }
+        });
+    }
+
     window.addEventListener('resize', initPill);
 
     filterBtns.forEach(btn => {
@@ -90,19 +108,90 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 5. Lightbox
+    // 5. Lightbox Slider
     const portfolioImages = document.querySelectorAll('.portfolio-img');
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
     const lightboxClose = document.getElementById('lightbox-close');
+    const lightboxPrev = document.getElementById('lightbox-prev');
+    const lightboxNext = document.getElementById('lightbox-next');
+    const lightboxImgContainer = document.getElementById('lightbox-img-container');
 
     if (lightbox && lightboxImg && lightboxClose) {
+        let currentImageIndex = 0;
+        let visibleImages = [];
+
+        // Touch swipe variables
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        const updateVisibleImages = () => {
+            // Get all visible portfolio items based on current filter
+            // item.style.display !== 'none' is true for active items
+            visibleImages = Array.from(portfolioImages).filter(img => {
+                const item = img.closest('.portfolio-item');
+                return item && item.style.display !== 'none';
+            });
+        };
+
+        const updateLightboxImage = (index) => {
+            if (visibleImages.length === 0) return;
+            currentImageIndex = index;
+
+            // Fade out effect
+            lightboxImg.style.opacity = '0';
+            lightboxImg.style.transform = 'scale(0.95)';
+
+            setTimeout(() => {
+                const src = visibleImages[currentImageIndex].getAttribute('src');
+                lightboxImg.setAttribute('src', src);
+
+                // Fade in effect
+                lightboxImg.style.opacity = '1';
+                lightboxImg.style.transform = 'scale(1)';
+
+                // Update button visibility if needed (optional: loop instead)
+                // We'll use looping
+            }, 150);
+        };
+
+        const showNext = (e) => {
+            if (e) e.stopPropagation();
+            if (visibleImages.length <= 1) return;
+            const nextIndex = (currentImageIndex + 1) % visibleImages.length;
+            updateLightboxImage(nextIndex);
+        };
+
+        const showPrev = (e) => {
+            if (e) e.stopPropagation();
+            if (visibleImages.length <= 1) return;
+            const prevIndex = (currentImageIndex - 1 + visibleImages.length) % visibleImages.length;
+            updateLightboxImage(prevIndex);
+        };
+
         portfolioImages.forEach(img => {
             img.addEventListener('click', () => {
-                const src = img.getAttribute('src');
-                lightboxImg.setAttribute('src', src);
-                lightbox.classList.add('active');
-                document.body.style.overflow = 'hidden'; // prevent scrolling
+                updateVisibleImages();
+
+                // Find index of clicked image in the visible array
+                const index = visibleImages.indexOf(img);
+                if (index !== -1) {
+                    currentImageIndex = index;
+
+                    // Immediately set source without animation for first open
+                    const src = visibleImages[currentImageIndex].getAttribute('src');
+                    lightboxImg.setAttribute('src', src);
+                    lightboxImg.style.opacity = '1';
+                    lightboxImg.style.transform = 'scale(1)';
+
+                    lightbox.classList.add('active');
+                    document.body.style.overflow = 'hidden'; // prevent scrolling
+
+                    // Hide arrows if only 1 image
+                    const showArrows = visibleImages.length > 1;
+                    if (lightboxPrev) lightboxPrev.style.display = showArrows ? 'block' : 'none';
+                    if (lightboxNext) lightboxNext.style.display = showArrows ? 'block' : 'none';
+                }
             });
         });
 
@@ -111,10 +200,42 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.style.overflow = '';
         };
 
+        // Event Listeners for Controls
+        if (lightboxPrev) lightboxPrev.addEventListener('click', showPrev);
+        if (lightboxNext) lightboxNext.addEventListener('click', showNext);
         lightboxClose.addEventListener('click', closeLightbox);
+
+        // Close on background click
         lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) closeLightbox();
+            if (e.target === lightbox || e.target === lightboxImgContainer) closeLightbox();
         });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') showNext();
+            if (e.key === 'ArrowLeft') showPrev();
+        });
+
+        // Touch Swipe navigation
+        if (lightboxImgContainer) {
+            lightboxImgContainer.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            lightboxImgContainer.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+
+            const handleSwipe = () => {
+                const swipeThreshold = 50;
+                if (touchEndX < touchStartX - swipeThreshold) showNext();
+                if (touchEndX > touchStartX + swipeThreshold) showPrev();
+            };
+        }
     }
 
     // 6. FAQ Accordion
