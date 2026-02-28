@@ -384,12 +384,14 @@ document.addEventListener('DOMContentLoaded', () => {
             rotationProgress = Math.min(1, rotationProgress);
 
             // Use fixed precision to prevent sub-pixel shaking
-            const rotateX = Number((20 - (20 * rotationProgress)).toFixed(2));
-            const translateY = Number((-100 * rotationProgress).toFixed(2));
+            const maxRotateX = isMobile ? 35 : 20;
+            const rotateX = Number((maxRotateX - (maxRotateX * rotationProgress)).toFixed(2));
+            const maxTranslateY = isMobile ? -150 : -100;
+            const translateY = Number((maxTranslateY * rotationProgress).toFixed(2));
 
             let scale;
             if (isMobile) {
-                scale = Number((0.7 + (0.2 * rotationProgress)).toFixed(3));
+                scale = Number((0.5 + (0.5 * rotationProgress)).toFixed(3));
             } else {
                 scale = Number((1.05 - (0.05 * rotationProgress)).toFixed(3));
             }
@@ -429,12 +431,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let rotationProgress = progress;
             const isMobile = window.innerWidth <= 768;
 
-            const rotateX = Number((20 * rotationProgress).toFixed(2));
-            const translateY = Number((-100 * rotationProgress).toFixed(2));
+            const maxRotateX = isMobile ? 35 : 20;
+            const rotateX = Number((maxRotateX * rotationProgress).toFixed(2));
+            const maxTranslateY = isMobile ? -150 : -100;
+            const translateY = Number((maxTranslateY * rotationProgress).toFixed(2));
 
             let scale;
             if (isMobile) {
-                scale = Number((1.0 - (0.2 * rotationProgress)).toFixed(3));
+                scale = Number((1.0 - (0.4 * rotationProgress)).toFixed(3));
             } else {
                 scale = Number((1.0 - (0.05 * rotationProgress)).toFixed(3));
             }
